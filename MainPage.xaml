@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:SMH_android"
+             x:Class="SMH_android.MainPage"
+             Title="상무병원 예약">
+    <ContentPage.Resources>
+        <!-- 연령대 사용성: 전체 글자·컨트롤 크게 -->
+        <Style TargetType="Label"><Setter Property="FontSize" Value="17" /></Style>
+        <Style TargetType="Entry">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="HeightRequest" Value="48" />
+        </Style>
+        <Style TargetType="Picker">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="HeightRequest" Value="48" />
+        </Style>
+        <Style TargetType="TimePicker">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="HeightRequest" Value="48" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="HeightRequest" Value="50" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="BackgroundColor" Value="#455A64" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+        <Style TargetType="Editor"><Setter Property="FontSize" Value="15" /></Style>
+    </ContentPage.Resources>
+    <ScrollView>
+        <VerticalStackLayout Padding="14" Spacing="8">
+            <VerticalStackLayout.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBackgroundTapped" />
+            </VerticalStackLayout.GestureRecognizers>
+
+            <Label Text="상무병원 진료예약 (박용철 원장)" FontSize="23" FontAttributes="Bold" />
+
+            <!-- 예약 정보 -->
+            <Label Text="구분" />
+            <Picker x:Name="cboType">
+                <Picker.Items><x:String>초진</x:String><x:String>재진</x:String></Picker.Items>
+            </Picker>
+
+            <Label Text="신청자명" />
+            <Entry x:Name="txtApplicant" />
+
+            <HorizontalStackLayout Spacing="8">
+                <local:CheckBoxView x:Name="chkSame" />
+                <Label Text="환자명 = 신청자와 동일" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <Label Text="환자명 (다를 때만)" />
+            <Entry x:Name="txtPatient" />
+
+            <Label Text="연락처" />
+            <HorizontalStackLayout Spacing="8">
+                <Picker x:Name="cboCarrier" WidthRequest="90">
+                    <Picker.Items>
+                        <x:String>010</x:String><x:String>011</x:String><x:String>016</x:String>
+                        <x:String>017</x:String><x:String>018</x:String><x:String>019</x:String>
+                    </Picker.Items>
+                </Picker>
+                <Entry x:Name="txtPhone2" Keyboard="Numeric" MaxLength="4" Placeholder="0000" WidthRequest="90" />
+                <Entry x:Name="txtPhone3" Keyboard="Numeric" MaxLength="4" Placeholder="0000" WidthRequest="90" />
+            </HorizontalStackLayout>
+
+            <Label Text="비밀번호 (4자리)" />
+            <Entry x:Name="txtPassword" Keyboard="Numeric" MaxLength="4" WidthRequest="120" HorizontalOptions="Start" />
+
+            <Label Text="오픈 시각 (탭하여 설정)" />
+            <TimePicker x:Name="tpOpenTime" Format="HH:mm" HorizontalOptions="Start" FontSize="18" />
+
+            <Label Text="새로고침 간격 (초) / 최대 대기(분)" />
+            <HorizontalStackLayout Spacing="6">
+                <Entry x:Name="txtPollMin" Text="1.0" Keyboard="Numeric" WidthRequest="64" />
+                <Label Text="~" VerticalOptions="Center" />
+                <Entry x:Name="txtPollMax" Text="5.0" Keyboard="Numeric" WidthRequest="64" />
+                <Label Text="초" VerticalOptions="Center" Margin="0,0,12,0" />
+                <Entry x:Name="txtMax" Text="6" Keyboard="Numeric" WidthRequest="50" />
+                <Label Text="분" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Spacing="8">
+                <local:CheckBoxView x:Name="chkAutoScan" />
+                <Label Text="이번달+다음달 자동 스캔" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="8">
+                <local:CheckBoxView x:Name="chkDryRun" />
+                <Label Text="테스트(신청하기 안 누름)" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <!-- 정시 알람 -->
+            <Label Text="정시 알람 (오픈 N분 전 자동 기상)" FontAttributes="Bold" Margin="0,8,0,0" />
+            <HorizontalStackLayout Spacing="6">
+                <Label Text="오픈" VerticalOptions="Center" />
+                <Entry x:Name="txtAlarmLead" Text="5" Keyboard="Numeric" WidthRequest="50" />
+                <Label Text="분 전에 알람" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="8">
+                <Button x:Name="btnAlarmOn" Text="알람 예약" Clicked="OnScheduleAlarm"
+                        BackgroundColor="#00838F" TextColor="White" />
+                <Button x:Name="btnAlarmOff" Text="알람 해제" Clicked="OnCancelAlarm" />
+                <Button x:Name="btnExactPerm" Text="정확 알람 확인" Clicked="OnExactPerm" />
+            </HorizontalStackLayout>
+            <Button x:Name="btnBattery" Text="배터리 최적화 예외 허용" Clicked="OnBatteryOpt"
+                    BackgroundColor="#EF6C00" TextColor="White" />
+            <Label x:Name="lblAlarm" Text="" TextColor="#2E7D32" />
+
+            <!-- 버튼 -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6">
+                <Button Grid.Row="0" Grid.Column="0" x:Name="btnSave" Text="설정 저장" Clicked="OnSave" />
+                <Button Grid.Row="0" Grid.Column="1" x:Name="btnRunNow" Text="지금 실행" Clicked="OnRunNow"
+                        BackgroundColor="#2E7D32" TextColor="White" />
+                <Button Grid.Row="1" Grid.Column="0" x:Name="btnSchedule" Text="오픈시각까지 대기 후 실행" Clicked="OnScheduleRun"
+                        BackgroundColor="#1565C0" TextColor="White" />
+                <Button Grid.Row="1" Grid.Column="1" x:Name="btnStop" Text="중지" Clicked="OnStop"
+                        BackgroundColor="#C62828" TextColor="White" IsEnabled="False" />
+            </Grid>
+
+            <!-- WebView: 자동화 대상이자 실시간 화면 -->
+            <Label Text="브라우저 (실시간)" FontAttributes="Bold" />
+            <Border Stroke="#CCC" StrokeThickness="1" HeightRequest="420">
+                <WebView x:Name="web" />
+            </Border>
+
+            <!-- 로그 -->
+            <Label Text="진행 로그" FontAttributes="Bold" />
+            <Editor x:Name="txtLog" IsReadOnly="True" HeightRequest="160" FontSize="12" />
+
+            <!-- 결과 스크린샷 -->
+            <Label Text="확인 스크린샷" FontAttributes="Bold" />
+            <Image x:Name="imgShot" Aspect="AspectFit" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
