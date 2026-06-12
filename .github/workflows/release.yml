@@ -1,0 +1,59 @@
+name: Build & Release APK
+
+# v* 태그를 push 하면 APK 를 빌드·서명해 GitHub Release 에 첨부한다.
+#   예) git tag v1.1 && git push origin v1.1
+#
+# 필요한 저장소 Secrets (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64  : 서명 키스토어(.keystore)를 base64 인코딩한 값
+#   ANDROID_KEY_ALIAS        : 키 별칭
+#   ANDROID_KEYSTORE_PASS    : 키스토어 비밀번호
+#   ANDROID_KEY_PASS         : 키 비밀번호
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Decode keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/smh.keystore"
+
+      - name: Get version from tag
+        id: ver
+        run: echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish signed APK
+        run: |
+          dotnet publish SMH_android.csproj -f net10.0-android -c Release \
+            -p:ApplicationDisplayVersion=${{ steps.ver.outputs.v }} \
+            -p:ApplicationVersion=${{ github.run_number }} \
+            -p:AndroidKeyStore=true \
+            -p:AndroidSigningKeyStore="$RUNNER_TEMP/smh.keystore" \
+            -p:AndroidSigningKeyAlias=${{ secrets.ANDROID_KEY_ALIAS }} \
+            -p:AndroidSigningStorePass='${{ secrets.ANDROID_KEYSTORE_PASS }}' \
+            -p:AndroidSigningKeyPass='${{ secrets.ANDROID_KEY_PASS }}' \
+            -o ./artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: ./artifacts/*-Signed.apk

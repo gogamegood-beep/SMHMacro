@@ -213,6 +213,7 @@ public partial class MainPage : ContentPage
     }
 
     // 알람으로 기동되면 자동 실행
+    private bool _updateChecked;
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -222,6 +223,23 @@ public partial class MainPage : ContentPage
             Log("⏰ 알람으로 자동 시작 — 오픈 시각까지 대기");
             await Task.Delay(800);
             await Run(waitForOpen: true);
+            return; // 자동 실행 중엔 업데이트 팝업 띄우지 않음
+        }
+        if (!_updateChecked)
+        {
+            _updateChecked = true;
+            await CheckUpdateAsync();
+        }
+    }
+
+    private async Task CheckUpdateAsync()
+    {
+        var r = await UpdateChecker.CheckAsync();
+        if (r is { HasUpdate: true } && !string.IsNullOrEmpty(r.DownloadUrl))
+        {
+            bool ok = await DisplayAlertAsync("업데이트",
+                $"새 버전 v{r.LatestVersion} 이(가) 있습니다. 다운로드할까요?", "다운로드", "나중에");
+            if (ok) await Launcher.Default.OpenAsync(r.DownloadUrl);
         }
     }
 
