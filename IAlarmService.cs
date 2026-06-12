@@ -6,6 +6,12 @@ public interface IAlarmService
     /// <summary>다음 진료일(목/금/일/월) 오픈-리드분 시각에 정확 알람 예약. 성공 시 예약시각 반환.</summary>
     DateTime? ScheduleNext(out string message);
 
+    /// <summary>1분 뒤 테스트 알람 예약(깨어남만 확인, 예약 실행 안 함).</summary>
+    DateTime? ScheduleTest(out string message);
+
+    /// <summary>알림 권한(Android 13+) 요청.</summary>
+    void EnsureNotificationPermission();
+
     /// <summary>예약된 알람 취소.</summary>
     void Cancel();
 
@@ -26,4 +32,5 @@ public interface IAlarmService
 public static class AutoStart
 {
     public static bool Requested;
+    public static bool TestMode;   // 테스트 알람으로 깨어난 경우(예약 실행 안 함)
 }

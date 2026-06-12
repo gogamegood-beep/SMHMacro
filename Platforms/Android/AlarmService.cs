@@ -56,6 +56,29 @@ public class AlarmService : IAlarmService
         return when;
     }
 
+    public DateTime? ScheduleTest(out string message)
+    {
+        if (!CanScheduleExact())
+        {
+            message = "정확 알람 권한이 꺼져 있습니다. '정확 알람 확인'을 눌러 허용하세요.";
+            return null;
+        }
+        var when = DateTime.Now.AddSeconds(60);
+        Am.SetExactAndAllowWhileIdle(AlarmType.RtcWakeup, ToEpochMillis(when), BuildPendingIntent(test: true));
+        message = $"테스트 알람: {when:HH:mm:ss} (1분 뒤)";
+        return when;
+    }
+
+    public void EnsureNotificationPermission()
+    {
+        if (!OperatingSystem.IsAndroidVersionAtLeast(33)) return;
+        var act = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+        if (act == null) return;
+        const string perm = "android.permission.POST_NOTIFICATIONS";
+        if (act.CheckSelfPermission(perm) != Android.Content.PM.Permission.Granted)
+            act.RequestPermissions(new[] { perm }, 1001);
+    }
+
     public void Cancel() => Am.Cancel(BuildPendingIntent());
 
     public bool IsIgnoringBatteryOptimizations()
@@ -73,11 +96,12 @@ public class AlarmService : IAlarmService
         Ctx.StartActivity(intent);
     }
 
-    private static PendingIntent BuildPendingIntent()
+    private static PendingIntent BuildPendingIntent(bool test = false)
     {
         var intent = new Intent(Ctx, typeof(AlarmReceiver));
+        intent.PutExtra("test", test);
         var flags = PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable;
-        return PendingIntent.GetBroadcast(Ctx, RequestCode, intent, flags)!;
+        return PendingIntent.GetBroadcast(Ctx, test ? RequestCode + 1 : RequestCode, intent, flags)!;
     }
 
     private static DateTime NextOccurrence(DateTime now, TimeSpan tod)

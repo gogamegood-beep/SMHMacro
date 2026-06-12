@@ -167,9 +167,10 @@ public partial class MainPage : ContentPage
 
         var svc = Alarm;
         if (svc == null) { lblAlarm.Text = "이 플랫폼에서는 알람을 지원하지 않습니다."; return; }
+        svc.EnsureNotificationPermission();   // 알림 권한 확보(Android 13+)
         if (!svc.CanScheduleExact())
         {
-            lblAlarm.Text = "정확 알람 권한이 필요합니다 → '권한 설정'을 눌러 허용 후 다시 시도.";
+            lblAlarm.Text = "정확 알람 권한이 필요합니다 → '정확 알람 확인'을 눌러 허용 후 다시 시도.";
             return;
         }
         svc.ScheduleNext(out var msg);
@@ -200,6 +201,16 @@ public partial class MainPage : ContentPage
         svc.OpenExactAlarmSettings();
     }
 
+    private void OnTestAlarm(object? sender, EventArgs e)
+    {
+        var svc = Alarm;
+        if (svc == null) return;
+        svc.EnsureNotificationPermission();
+        svc.ScheduleTest(out var msg);
+        lblAlarm.Text = msg + " — 화면을 꺼도 1분 뒤 앱이 떠야 정상";
+        Log("테스트 알람 예약: " + msg + " (앱을 닫거나 화면 꺼두고 1분 대기)");
+    }
+
     private void OnBatteryOpt(object? sender, EventArgs e)
     {
         var svc = Alarm;
@@ -220,6 +231,14 @@ public partial class MainPage : ContentPage
         if (AutoStart.Requested)
         {
             AutoStart.Requested = false;
+            if (AutoStart.TestMode)
+            {
+                AutoStart.TestMode = false;
+                Log("✅ 테스트 알람으로 앱이 깨어남 — 알람 동작 정상");
+                await DisplayAlertAsync("테스트 알람 성공",
+                    "✅ 알람으로 앱이 정상적으로 깨어났습니다.\n실제 예약일에도 이렇게 깨어나 자동 실행됩니다.", "확인");
+                return;
+            }
             Log("⏰ 알람으로 자동 시작 — 오픈 시각까지 대기");
             await Task.Delay(800);
             await Run(waitForOpen: true);

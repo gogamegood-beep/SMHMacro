@@ -19,7 +19,9 @@ public class AlarmReceiver : BroadcastReceiver
     {
         if (context == null) return;
 
+        bool test = intent?.GetBooleanExtra("test", false) ?? false;
         AutoStart.Requested = true;
+        AutoStart.TestMode = test;
 
         var launch = new Intent(context, typeof(MainActivity));
         launch.PutExtra("autostart", true);
@@ -36,8 +38,8 @@ public class AlarmReceiver : BroadcastReceiver
         }
 
         var builder = new NotificationCompat.Builder(context, ChannelId);
-        builder.SetContentTitle("상무병원 예약 준비");
-        builder.SetContentText("예약 자동 실행을 시작합니다.");
+        builder.SetContentTitle(test ? "테스트 알람" : "상무병원 예약 준비");
+        builder.SetContentText(test ? "알람으로 앱이 깨어났습니다." : "예약 자동 실행을 시작합니다.");
         builder.SetSmallIcon(Android.Resource.Drawable.IcDialogInfo);
         builder.SetPriority((int)NotificationPriority.High);
         builder.SetCategory(NotificationCompat.CategoryAlarm);
@@ -48,7 +50,8 @@ public class AlarmReceiver : BroadcastReceiver
         // 폴백: 액티비티 직접 기동 시도
         try { context.StartActivity(launch); } catch { /* 백그라운드 제한 시 알림으로 대체 */ }
 
-        // 다음 회차 재예약
-        try { new AlarmService().ScheduleNext(out _); } catch { }
+        // 실제 알람만 다음 회차 재예약(테스트는 제외)
+        if (!test)
+            try { new AlarmService().ScheduleNext(out _); } catch { }
     }
 }

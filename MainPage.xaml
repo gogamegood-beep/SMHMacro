@@ -105,6 +105,8 @@
             </HorizontalStackLayout>
             <Button x:Name="btnBattery" Text="배터리 최적화 예외 허용" Clicked="OnBatteryOpt"
                     BackgroundColor="#EF6C00" TextColor="White" />
+            <Button x:Name="btnTestAlarm" Text="테스트 알람 (1분 뒤)" Clicked="OnTestAlarm"
+                    BackgroundColor="#6A1B9A" TextColor="White" />
             <Label x:Name="lblAlarm" Text="" TextColor="#2E7D32" />
 
             <!-- 버튼 -->
