@@ -129,9 +129,11 @@ public partial class MainPage : ContentPage
                 Log($"미완료 · {result.Reason}");
             else if (result.DryRun)
                 Log($"완료(테스트) · 슬롯={result.Slot}");
+            else if (result.Verified)
+                Log($"🎉 예약 완료 + 예약확인 조회 성공! · 슬롯={result.Slot} (아래 스크린샷 = 예약 내역)");
             else
                 Log(result.Done
-                    ? $"🎉 예약 완료! · 슬롯={result.Slot}"
+                    ? $"🎉 예약 완료! · 슬롯={result.Slot} (예약확인 조회는 미확인 — 스크린샷 참조)"
                     : $"신청함(완료 메시지 미확인) · 슬롯={result.Slot} — 스크린샷 확인");
             await CaptureAsync();
         }

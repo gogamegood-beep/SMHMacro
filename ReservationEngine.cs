@@ -165,7 +165,46 @@ public class ReservationEngine : IDisposable
         var body = await EvalAsync("(document.body?document.body.innerText:'').slice(0,3000)");
         bool done = body.Contains("완료") || body.Contains("접수") || body.Contains("신청되") || body.Contains("예약되");
         _log(done ? "✅ 예약 완료 메시지 확인됨" : "신청 후 결과 메시지를 못 찾음(스크린샷 확인 필요)");
-        return new ReservationResult { Success = true, Slot = slot, Done = done };
+
+        // ── 예약확인하기 — 접수 내역 조회까지 이어서 수행(최종 화면 = 예약 확인 결과) ──
+        bool verified = false;
+        try { verified = await VerifyReservationAsync(cfg, ct); }
+        catch (Exception ex) { _log("예약 확인 단계 오류(신청 자체는 완료): " + ex.Message); }
+
+        return new ReservationResult { Success = true, Slot = slot, Done = done, Verified = verified };
+    }
+
+    /// <summary>예약확인하기 페이지에서 신청자명·연락처·비밀번호로 접수 내역을 조회한다.
+    /// 종료 시 WebView 가 예약 확인 결과 화면에 머물러 최종 스크린샷으로 남는다.</summary>
+    private async Task<bool> VerifyReservationAsync(ResvSettings cfg, CancellationToken ct)
+    {
+        _log("예약확인하기 진입 — 접수 내역 조회");
+        var url = $"{cfg.BaseUrl}&reservation_submit=ok";
+        if (!await NavigateAsync(url)) { _log("예약확인 페이지 로드 실패"); return false; }
+        if (!await WaitSelectorAsync("#reservation_name", 8000)) { _log("예약확인 폼을 찾지 못함"); return false; }
+
+        async Task Gap() => await Task.Delay(Random.Shared.Next(cfg.InputMinMs, cfg.InputMaxMs + 1), ct);
+
+        await SetFieldAsync("reservation_name", cfg.Applicant); await Gap();
+        await SelectCarrierAsync(cfg.PhoneCarrier); await Gap();
+        await SetFieldAsync("reservation_phone2", cfg.Phone2); await Gap();
+        await SetFieldAsync("reservation_phone3", cfg.Phone3); await Gap();
+        await SetFieldAsync("reservation_password", cfg.Password); await Gap();
+
+        _navTcs = new TaskCompletionSource<bool>();
+        var clicked = await EvalAsync(
+            "(function(){var f=document.getElementById('fschedule')||document.forms[0];" +
+            "var b=f?f.querySelector('input[type=submit]'):document.querySelector('input[type=submit]');" +
+            "if(b){b.click();return '1';}if(f){f.submit();return '2';}return '0';})()");
+        if (clicked == "0") { _log("예약확인 '확인' 버튼을 찾지 못함"); return false; }
+        await Task.WhenAny(_navTcs.Task, Task.Delay(10000));
+        await Task.Delay(600); // 결과 렌더 여유
+
+        var body = await EvalAsync("(document.body?document.body.innerText:'').slice(0,3000)");
+        bool found = body.Contains(cfg.Applicant) && (body.Contains("예약") || body.Contains("접수"));
+        _log(found ? "✅ 예약 확인 조회 성공 — 예약 내역이 화면에 표시됨"
+                   : "예약 확인 결과를 인식하지 못함 — 스크린샷으로 직접 확인 필요");
+        return found;
     }
 
     private async Task<bool> WaitSelectorAsync(string sel, int timeoutMs)
@@ -238,6 +277,7 @@ public class ReservationResult
     public bool Success { get; set; }
     public bool DryRun { get; set; }
     public bool Done { get; set; }      // 예약 완료 메시지까지 확인됨
+    public bool Verified { get; set; }  // 예약확인하기 조회까지 성공
     public string? Reason { get; set; }
     public string Slot { get; set; } = "";
 }
