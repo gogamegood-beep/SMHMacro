@@ -227,7 +227,7 @@ public partial class MainPage : ContentPage
     }
 
     // 알람으로 기동되면 자동 실행
-    private bool _updateChecked;
+    private DateTime _lastUpdateCheck = DateTime.MinValue;
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -247,9 +247,10 @@ public partial class MainPage : ContentPage
             await Run(waitForOpen: true);
             return; // 자동 실행 중엔 업데이트 팝업 띄우지 않음
         }
-        if (!_updateChecked)
+        // 포그라운드로 돌아올 때마다 재확인(중복 fire 방지용 짧은 throttle)
+        if (DateTime.Now - _lastUpdateCheck > TimeSpan.FromSeconds(5))
         {
-            _updateChecked = true;
+            _lastUpdateCheck = DateTime.Now;
             await CheckUpdateAsync();
         }
     }
