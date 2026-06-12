@@ -12,6 +12,7 @@ public partial class MainPage : ContentPage
     public MainPage()
     {
         InitializeComponent();
+        lblVersion.Text = $"버전 v{AppInfo.Current.VersionString}";
         chkSame.CheckedChanged += (_, _) => UpdatePatientEnabled();
         LoadToUi(ResvSettings.Load());
     }

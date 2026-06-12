@@ -36,6 +36,7 @@
             </VerticalStackLayout.GestureRecognizers>
 
             <Label Text="상무병원 진료예약 (박용철 원장)" FontSize="23" FontAttributes="Bold" />
+            <Label x:Name="lblVersion" Text="" FontSize="13" TextColor="#666" />
 
             <!-- 예약 정보 -->
             <Label Text="구분" />
